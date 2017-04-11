@@ -328,7 +328,7 @@ public class Sentry.Client : Object
 			level = "info";
 		}
 
-		capture (new Json.Builder ()
+		var payload = new Json.Builder ()
 			.begin_object ()
 				.set_member_name ("event_id").add_string_value (generate_event_id ())
 				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
@@ -339,6 +339,15 @@ public class Sentry.Client : Object
 				.set_member_name ("message").add_string_value (message)
 				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
 			.end_object ()
-			.get_root ());
+			.get_root ();
+
+		if (LogLevelFlags.FLAG_FATAL in log_flags)
+		{
+			capture (payload);
+		}
+		else
+		{
+			capture_async.begin (payload);
+		}
 	}
 }
