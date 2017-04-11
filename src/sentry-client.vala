@@ -41,7 +41,9 @@ public class Sentry.Client : Object
 		                                              generate_timestamp (),
 		                                              public_key,
 		                                              secret_key));
-		msg.set_request ("application/json", Soup.MemoryUse.COPY, Json.to_string (payload, false).data);
+		var gen = new Json.Generator ();
+		gen.root = payload;
+		msg.set_request ("application/json", Soup.MemoryUse.COPY, gen.to_data (null).data);
 		return msg;
 	}
 
@@ -59,7 +61,9 @@ public class Sentry.Client : Object
 		{
 			try
 			{
-				return Json.from_string ((string) msg.response_body.data).get_object ().get_string_member ("id");
+				var parser = new Json.Parser ();
+				parser.load_from_data ((string) msg.response_body.data);
+				return parser.get_root ().get_object ().get_string_member ("id");
 			}
 			catch (Error err)
 			{
@@ -92,7 +96,9 @@ public class Sentry.Client : Object
 		{
 			try
 			{
-				return Json.from_string ((string) msg.response_body.data).get_object ().get_string_member ("id");
+				var parser = new Json.Parser ();
+				parser.load_from_data ((string) msg.response_body.data);
+				return parser.get_root ().get_object ().get_string_member ("id");
 			}
 			catch (Error err)
 			{
