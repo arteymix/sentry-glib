@@ -1,3 +1,8 @@
+public errordomain FooError
+{
+	FAILED
+}
+
 public int main (string[] args)
 {
 	Test.init (ref args);

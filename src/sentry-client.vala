@@ -47,6 +47,39 @@ public class Sentry.Client : Object
 		return msg;
 	}
 
+	/**
+	 * Extract the 'id' field safely because we cannot afford any form of error
+	 * at this point.
+	 */
+	private string? extract_id (Json.Node? node)
+	{
+		if (node == null)
+		{
+			return null;
+		}
+
+		if (node.get_node_type () != Json.NodeType.OBJECT)
+		{
+			return null;
+		}
+
+		var object = node.get_object ();
+
+		if (!object.has_member ("id"))
+		{
+			return null;
+		}
+
+		var id = object.get_member ("id");
+
+		if (id.get_node_type () != Json.NodeType.VALUE || id.get_value_type () != typeof (string))
+		{
+			return null;
+		}
+
+		return id.get_string ();
+	}
+
 	private string? capture (Json.Node payload)
 	{
 		if (dsn == null || dsn == "")
@@ -63,7 +96,7 @@ public class Sentry.Client : Object
 			{
 				var parser = new Json.Parser ();
 				parser.load_from_data ((string) msg.response_body.data);
-				return parser.get_root ().get_object ().get_string_member ("id");
+				return extract_id (parser.get_root ());
 			}
 			catch (Error err)
 			{
@@ -98,7 +131,7 @@ public class Sentry.Client : Object
 			{
 				var parser = new Json.Parser ();
 				parser.load_from_data ((string) msg.response_body.data);
-				return parser.get_root ().get_object ().get_string_member ("id");
+				return extract_id (parser.get_root ());
 			}
 			catch (Error err)
 			{
