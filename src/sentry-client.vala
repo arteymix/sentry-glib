@@ -67,13 +67,13 @@ public class Sentry.Client : Object
 			}
 			catch (Error err)
 			{
-				critical ("%s (%s, %d)", err.message, err.domain.to_string (), err.code);
+				stderr.printf ("%s (%s, %d)\n", err.message, err.domain.to_string (), err.code);
 				return null;
 			}
 		}
 		else
 		{
-			critical (msg.response_headers.get_one ("X-Sentry-Error") ?? "Unknown error.");
+			stderr.printf ("%s\n", msg.response_headers.get_one ("X-Sentry-Error") ?? "Unknown error.");
 			return null;
 		}
 	}
@@ -102,13 +102,13 @@ public class Sentry.Client : Object
 			}
 			catch (Error err)
 			{
-				critical ("%s (%s, %d)", err.message, err.domain.to_string (), err.code);
+				stderr.printf ("%s (%s, %d)\n", err.message, err.domain.to_string (), err.code);
 				return null;
 			}
 		}
 		else
 		{
-			critical (msg.response_headers.get_one ("X-Sentry-Error") ?? "Unknown error.");
+			stderr.printf ("%s\n", msg.response_headers.get_one ("X-Sentry-Error") ?? "Unknown error.");
 			return null;
 		}
 	}
