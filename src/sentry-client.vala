@@ -226,7 +226,7 @@ public class Sentry.Client : Object
 			.get_root ();
 	}
 
-	private Json.Node generate_tags (string[] tags)
+	private Json.Node generate_tags ([CCode (array_length = false, array_null_terminated = true)] string[] tags)
 	{
 		var tagsb = new Json.Builder ();
 
@@ -253,7 +253,7 @@ public class Sentry.Client : Object
 		return tagsb.get_root ();
 	}
 
-	public string? capture_message (string message, string[] tags = {})
+	public string? capture_message (string message, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
 	{
 		return capture (new Json.Builder ()
 			.begin_object ()
@@ -268,7 +268,7 @@ public class Sentry.Client : Object
 			.get_root ());
 	}
 
-	public async string? capture_message_async (string message, string[] tags = {})
+	public async string? capture_message_async (string message, [CCode (array_length = false, array_null_terminated = true)] string[]? tags = {})
 	{
 		return yield capture_async (new Json.Builder ()
 			.begin_object ()
@@ -283,7 +283,7 @@ public class Sentry.Client : Object
 			.get_root ());
 	}
 
-	public string? capture_error (Error err, string[] tags = {})
+	public string? capture_error (Error err, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
 	{
 		return capture (new Json.Builder ()
 			.begin_object ()
@@ -305,7 +305,7 @@ public class Sentry.Client : Object
 			.get_root ());
 	}
 
-	public async string? capture_error_async (Error err, string[] tags = {})
+	public async string? capture_error_async (Error err, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
 	{
 		return yield capture_async (new Json.Builder ()
 			.begin_object ()
