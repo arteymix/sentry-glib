@@ -1,8 +1,19 @@
 using GLib;
 
+public enum Sentry.ClientFlags
+{
+	NONE,
+	/**
+	 * Force all operation to be synchronous when possible.
+	 */
+	FORCE_SYNCHRONOUS
+}
+
 public class Sentry.Client : Object
 {
 	public string? dsn { get; construct; default = null; }
+
+	public ClientFlags client_flags { get; construct; }
 
 	public string?  server_name { get; construct set; default = null; }
 	public string?  release     { get; construct set; default = null; }
@@ -16,9 +27,9 @@ public class Sentry.Client : Object
 
 	private Soup.Session sentry_session;
 
-	public Client (string? dsn = null)
+	public Client (string? dsn = null, ClientFlags client_flags = ClientFlags.NONE)
 	{
-		base (dsn: dsn);
+		base (dsn: dsn, client_flags: client_flags);
 	}
 
 	construct
@@ -354,6 +365,9 @@ public class Sentry.Client : Object
 	 * Routine suitable for {@link GLib.Log.set_handler}.
 	 *
 	 * Note that this instance must be passed for the 'user_data' argument.
+	 *
+	 * The log is send asynchronously unless the error is marked with {@link GLib.LogLevelFlags.FLAG_FATAL}
+	 * or the {@link SentryClient.force_synchronous} property is 'true'.
 	 */
 	[CCode (instance_pos = -1)]
 	public void capture_log (string? log_domain, LogLevelFlags log_flags, string message)
@@ -398,7 +412,7 @@ public class Sentry.Client : Object
 			.end_object ()
 			.get_root ();
 
-		if (LogLevelFlags.FLAG_FATAL in log_flags)
+		if (LogLevelFlags.FLAG_FATAL in log_flags || ClientFlags.FORCE_SYNCHRONOUS in client_flags)
 		{
 			capture (payload);
 		}
