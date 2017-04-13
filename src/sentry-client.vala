@@ -253,6 +253,25 @@ public class Sentry.Client : Object
 		return tagsb.get_root ();
 	}
 
+	private Json.Node generate_modules ()
+	{
+		var modules = new Json.Builder ();
+
+		modules.begin_object ();
+
+		foreach (var module in this.modules)
+		{
+			if (module.index_of_char ('=') > -1) {
+				modules.set_member_name (module.substring (0, module.index_of_char ('=')));
+				modules.add_string_value (module.substring (module.index_of_char ('=') + 1));
+			}
+		}
+
+		modules.end_object ();
+
+		return modules.get_root ();
+	}
+
 	public string? capture_message (string message, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
 	{
 		return capture (new Json.Builder ()
@@ -263,6 +282,7 @@ public class Sentry.Client : Object
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("message").add_string_value (message)
 				.set_member_name ("tags").add_value (generate_tags (tags))
+				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
 			.end_object ()
 			.get_root ());
@@ -278,6 +298,7 @@ public class Sentry.Client : Object
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("message").add_string_value (message)
 				.set_member_name ("tags").add_value (generate_tags (tags))
+				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
 			.end_object ()
 			.get_root ());
@@ -293,6 +314,7 @@ public class Sentry.Client : Object
 				.set_member_name ("level").add_string_value ("error")
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("tags").add_value (generate_tags (tags))
+				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("message").add_string_value ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code))
 				.set_member_name ("exception")
 				.begin_object ()
@@ -315,6 +337,7 @@ public class Sentry.Client : Object
 				.set_member_name ("level").add_string_value ("error")
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("tags").add_value (generate_tags (tags))
+				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("message").add_string_value ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code))
 				.set_member_name ("exception")
 				.begin_object ()
@@ -369,6 +392,7 @@ public class Sentry.Client : Object
 				.set_member_name ("level").add_string_value (level)
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("tags").add_value (generate_tags (tags))
+				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("message").add_string_value (message)
 				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
 			.end_object ()
