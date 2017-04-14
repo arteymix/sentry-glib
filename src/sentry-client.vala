@@ -91,6 +91,16 @@ public class Sentry.Client : Object
 		return id.get_string ();
 	}
 
+	private unowned string limit (string str, long len)
+	{
+		if (str.length > len)
+		{
+			str.data[str.index_of_nth_char (len)] = '\0';
+		}
+
+		return str;
+	}
+
 	private string? capture (Json.Node payload)
 	{
 		if (dsn == null || dsn == "")
@@ -246,16 +256,16 @@ public class Sentry.Client : Object
 		foreach (var tag in this.tags)
 		{
 			if (tag.index_of_char ('=') > -1) {
-				tagsb.set_member_name (tag.substring (0, tag.index_of_char ('=')));
-				tagsb.add_string_value (tag.substring (tag.index_of_char ('=') + 1));
+				tagsb.set_member_name (limit (tag.substring (0, tag.index_of_char ('=')), 32));
+				tagsb.add_string_value (limit (tag.substring (tag.index_of_char ('=') + 1), 200));
 			}
 		}
 
 		foreach (var tag in tags)
 		{
 			if (tag.index_of_char ('=') > -1) {
-				tagsb.set_member_name (tag.substring (0, tag.index_of_char ('=')));
-				tagsb.add_string_value (tag.substring (tag.index_of_char ('=') + 1));
+				tagsb.set_member_name (limit (tag.substring (0, tag.index_of_char ('=')), 32));
+				tagsb.add_string_value (limit (tag.substring (tag.index_of_char ('=') + 1), 200));
 			}
 		}
 
@@ -291,7 +301,7 @@ public class Sentry.Client : Object
 				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
 				.set_member_name ("sdk").add_value (generate_sdk ())
 				.set_member_name ("platform").add_string_value ("c")
-				.set_member_name ("message").add_string_value (message)
+				.set_member_name ("message").add_string_value (limit (message, 10000))
 				.set_member_name ("tags").add_value (generate_tags (tags))
 				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
@@ -307,7 +317,7 @@ public class Sentry.Client : Object
 				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
 				.set_member_name ("sdk").add_value (generate_sdk ())
 				.set_member_name ("platform").add_string_value ("c")
-				.set_member_name ("message").add_string_value (message)
+				.set_member_name ("message").add_string_value (limit (message, 10000))
 				.set_member_name ("tags").add_value (generate_tags (tags))
 				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
@@ -326,7 +336,7 @@ public class Sentry.Client : Object
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("tags").add_value (generate_tags (tags))
 				.set_member_name ("modules").add_value (generate_modules ())
-				.set_member_name ("message").add_string_value ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code))
+				.set_member_name ("message").add_string_value (limit ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code), 10000))
 				.set_member_name ("exception")
 				.begin_object ()
 					.set_member_name ("values")
@@ -349,7 +359,7 @@ public class Sentry.Client : Object
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("tags").add_value (generate_tags (tags))
 				.set_member_name ("modules").add_value (generate_modules ())
-				.set_member_name ("message").add_string_value ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code))
+				.set_member_name ("message").add_string_value (limit ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code), 10000))
 				.set_member_name ("exception")
 				.begin_object ()
 					.set_member_name ("values")
@@ -410,7 +420,7 @@ public class Sentry.Client : Object
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("tags").add_value (generate_tags (tags))
 				.set_member_name ("modules").add_value (generate_modules ())
-				.set_member_name ("message").add_string_value (message)
+				.set_member_name ("message").add_string_value (limit (message, 10000))
 				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
 			.end_object ()
 			.get_root ();
@@ -452,7 +462,7 @@ public class Sentry.Client : Object
 			switch (field.key)
 			{
 				case "MESSAGE":
-					payload.set_member_name ("message").add_string_value ((string) field.value);
+					payload.set_member_name ("message").add_string_value (limit ((string) field.value, 10000));
 					break;
 				case "MESSAGE_ID":
 					break;
