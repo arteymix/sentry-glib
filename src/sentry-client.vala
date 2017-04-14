@@ -11,6 +11,9 @@ public enum Sentry.ClientFlags
 
 public class Sentry.Client : Object
 {
+	private extern const string VERSION;
+	private extern const string API_VERSION;
+
 	public string? dsn { get; construct; default = null; }
 
 	public ClientFlags client_flags { get; construct; }
@@ -42,13 +45,14 @@ public class Sentry.Client : Object
 			project_id = uri.path[1:uri.path.length];
 		}
 		sentry_session = new Soup.Session ();
-		sentry_session.user_agent = "Sentry-GLib/1.0";
+		sentry_session.user_agent = "Sentry-GLib/%s".printf (API_VERSION);
 	}
 
 	private Soup.Message generate_message_from_payload (Json.Node payload)
 	{
 		var msg = new Soup.Message.from_uri ("POST", new Soup.URI ("https://sentry.io/api/%s/store/".printf (project_id)));
-		msg.request_headers.replace ("X-Sentry-Auth", "Sentry sentry_version=7, sentry_client=Sentry-GLib/1.0, sentry_timestamp=%s, sentry_key=%s, sentry_secret=%s".printf (
+		msg.request_headers.replace ("X-Sentry-Auth", "Sentry sentry_version=7, sentry_client=Sentry-GLib/%s, sentry_timestamp=%s, sentry_key=%s, sentry_secret=%s".printf (
+		                                              API_VERSION,
 		                                              generate_timestamp (),
 		                                              public_key,
 		                                              secret_key));
@@ -185,8 +189,8 @@ public class Sentry.Client : Object
 	{
 		return new Json.Builder ()
 			.begin_object ()
-				.set_member_name ("name").add_string_value ("sentry-glib")
-				.set_member_name ("version").add_string_value ("1.0.0")
+				.set_member_name ("name").add_string_value ("Sentry-GLib")
+				.set_member_name ("version").add_string_value (VERSION)
 			.end_object ()
 			.get_root ();
 	}

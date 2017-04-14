@@ -1,5 +1,7 @@
 project('Sentry-GLib', 'c', 'vala',
-        version: '1.0.0-dev')
+        version: '0.1.0-dev')
+
+api_version = '0.1'
 
 add_project_arguments('--vapidir=' + meson.current_source_dir() + '/vapi',
                       language: 'vala')
