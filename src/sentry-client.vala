@@ -361,6 +361,34 @@ public class Sentry.Client : Object
 			.get_root ());
 	}
 
+	private string level_from_log_level (LogLevelFlags log_level)
+	{
+		if (LogLevelFlags.LEVEL_ERROR in log_level)
+		{
+			return "fatal";
+		}
+		else if (LogLevelFlags.LEVEL_CRITICAL in log_level)
+		{
+			return "error";
+		}
+		else if (LogLevelFlags.LEVEL_WARNING in log_level)
+		{
+			return "warning";
+		}
+		else if (LogLevelFlags.LEVEL_INFO in log_level)
+		{
+			return "info";
+		}
+		else if (LogLevelFlags.LEVEL_DEBUG in log_level)
+		{
+			return "debug";
+		}
+		else
+		{
+			return "info";
+		}
+	}
+
 	/**
 	 * Routine suitable for {@link GLib.Log.set_handler}.
 	 *
@@ -372,38 +400,13 @@ public class Sentry.Client : Object
 	[CCode (instance_pos = -1)]
 	public void capture_log (string? log_domain, LogLevelFlags log_flags, string message)
 	{
-		string level;
-		if (LogLevelFlags.LEVEL_ERROR in log_flags)
-		{
-			level = "fatal";
-		}
-		else if (LogLevelFlags.LEVEL_CRITICAL in log_flags)
-		{
-			level = "error";
-		}
-		else if (LogLevelFlags.LEVEL_WARNING in log_flags)
-		{
-			level = "warning";
-		}
-		else if (LogLevelFlags.LEVEL_INFO in log_flags)
-		{
-			level = "info";
-		}
-		else if (LogLevelFlags.LEVEL_DEBUG in log_flags)
-		{
-			level = "debug";
-		}
-		else
-		{
-			level = "info";
-		}
 
 		var payload = new Json.Builder ()
 			.begin_object ()
 				.set_member_name ("event_id").add_string_value (generate_event_id ())
 				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
 				.set_member_name ("sdk").add_value (generate_sdk ())
-				.set_member_name ("level").add_string_value (level)
+				.set_member_name ("level").add_string_value (level_from_log_level (log_flags))
 				.set_member_name ("platform").add_string_value ("c")
 				.set_member_name ("tags").add_value (generate_tags (tags))
 				.set_member_name ("modules").add_value (generate_modules ())
@@ -421,4 +424,54 @@ public class Sentry.Client : Object
 			capture_async.begin (payload);
 		}
 	}
+
+#if GLIB_2_50
+	/**
+	 * Routine suitable for {@link GLib.Log.set_writer_func}.
+	 *
+	 * Use this if you would like to dump all the logs to sentry, otherwise
+	 * {@link capture_log} is more suitable for a cascading logging model.
+	 *
+	 * Note that this instance must be passed for the 'user_data' argument.
+	 */
+	[CCode (instance_pos = -1)]
+	public LogWriterOutput capture_structured_log (LogLevelFlags log_level, LogField[] fields)
+	{
+		var payload = new Json.Builder ()
+			.begin_object ()
+				.set_member_name ("event_id").add_string_value (generate_event_id ())
+				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
+				.set_member_name ("sdk").add_value (generate_sdk ())
+				.set_member_name ("level").add_string_value (level_from_log_level (log_level))
+				.set_member_name ("platform").add_string_value ("c")
+				.set_member_name ("tags").add_value (generate_tags (tags))
+				.set_member_name ("modules").add_value (generate_modules ());
+
+		foreach (var field in fields)
+		{
+			switch (field.key)
+			{
+				case "MESSAGE":
+					payload.set_member_name ("message").add_string_value ((string) field.value);
+					break;
+				case "MESSAGE_ID":
+					break;
+			}
+		}
+
+		payload
+			.set_member_name ("stacktrace").add_value (generate_stacktrace ())
+			.end_object ();
+
+		if (LogLevelFlags.FLAG_FATAL in log_level || ClientFlags.FORCE_SYNCHRONOUS in client_flags)
+		{
+			return capture (payload.get_root ()) == null ? LogWriterOutput.UNHANDLED : LogWriterOutput.HANDLED;
+		}
+		else
+		{
+			capture_async.begin (payload.get_root ());
+			return LogWriterOutput.HANDLED;
+		}
+	}
+#endif
 }

@@ -90,5 +90,30 @@ public int main (string[] args)
 		Test.trap_assert_stderr ("");
 	});
 
+#if GLIB_2_50
+	Test.add_func ("/structured-logging", () => {
+		var sentry_dsn = Environment.get_variable ("SENTRY_DSN");
+
+		if (sentry_dsn == null || sentry_dsn == "")
+		{
+			Test.skip ("The 'SENTRY_DSN' environment variable is not set or empty.");
+			return;
+		}
+
+		if (Test.subprocess ())
+		{
+			var sentry = new Sentry.Client (sentry_dsn, Sentry.ClientFlags.FORCE_SYNCHRONOUS);
+			Log.set_writer_func (sentry.capture_structured_log);
+			message ("bar");
+			return;
+		}
+
+		Test.trap_subprocess (null, 0, 0);
+
+		Test.trap_assert_passed ();
+		Test.trap_assert_stderr ("");
+	});
+#endif
+
 	return Test.run ();
 }

@@ -11,5 +11,9 @@ json_glib_dep = dependency('json-glib-1.0')
 uuid_dep = dependency('uuid')
 libunwind_dep = dependency('libunwind-generic')
 
+if glib_dep.version().version_compare('>=2.50')
+    add_project_arguments('--define=GLIB_2_50', language: 'vala')
+endif
+
 subdir('src')
 subdir('tests')
