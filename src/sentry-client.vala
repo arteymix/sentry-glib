@@ -205,6 +205,13 @@ public class Sentry.Client : Object
 		var ctx = Unwind.Context ();
 		var cursor = Unwind.Cursor.local (ctx);
 
+#if LIBDWARF
+		Dwarf.Debug dwarf_debug;
+		var self_exe = FileStream.open ("/proc/self/exe", "r");
+		assert (null != self_exe);
+		assert (Dwarf.DLV_OK == Dwarf.init (self_exe.fileno (), Dwarf.DLC_READ, null, out dwarf_debug));
+#endif
+
 		stacktrace.set_member_name ("frames");
 		stacktrace.begin_array ();
 
@@ -234,6 +241,10 @@ public class Sentry.Client : Object
 				.end_object ();
 		}
 		while (cursor.step () > 0);
+
+#if LIBDWARF
+		dwarf_debug.finish ();
+#endif
 
 		stacktrace.end_array ();
 		stacktrace.end_object ();
