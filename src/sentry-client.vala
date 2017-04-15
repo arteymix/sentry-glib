@@ -107,12 +107,13 @@ public class Sentry.Client : Object
 
 	private string? capture (Json.Node payload)
 	{
+		var msg = generate_message_from_payload (payload);
+
 		if (dsn == null || dsn == "")
 		{
 			return null;
 		}
 
-		var msg = generate_message_from_payload (payload);
 		sentry_session.send_message (msg);
 
 		if (msg.status_code == Soup.Status.OK)
@@ -138,12 +139,12 @@ public class Sentry.Client : Object
 
 	private async string? capture_async (Json.Node payload)
 	{
+		var msg = generate_message_from_payload (payload);
+
 		if (dsn == null || dsn == "")
 		{
 			return null;
 		}
-
-		var msg = generate_message_from_payload (payload);
 
 		sentry_session.queue_message (msg, () => {
 			capture_async.callback ();
