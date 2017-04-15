@@ -206,10 +206,24 @@ public class Sentry.Client : Object
 		var cursor = Unwind.Cursor.local (ctx);
 
 #if LIBDWARF
+		int dwarf_code;
+		Dwarf.Error? dwarf_error;
 		Dwarf.Debug dwarf_debug;
 		var self_exe = FileStream.open ("/proc/self/exe", "r");
 		assert (null != self_exe);
-		assert (Dwarf.DLV_OK == Dwarf.init (self_exe.fileno (), Dwarf.DLC_READ, null, out dwarf_debug));
+		dwarf_code = Dwarf.init (self_exe.fileno (), Dwarf.DLC_READ, null, out dwarf_debug, out dwarf_error);
+		Dwarf.Cie[] dwarf_cies = {};
+		Dwarf.Fde[] dwarf_frames = {};
+		if (dwarf_code == Dwarf.DLV_OK)
+		{
+			dwarf_code = dwarf_debug.get_fde_list (out dwarf_cies, out dwarf_frames, out dwarf_error);
+
+			// check for GNU-style entries instead
+			if (dwarf_code == Dwarf.DLV_NO_ENTRY)
+			{
+				dwarf_code = dwarf_debug.get_fde_list_eh (out dwarf_cies, out dwarf_frames, out dwarf_error);
+			}
+		}
 #endif
 
 		stacktrace.set_member_name ("frames");
@@ -234,7 +248,26 @@ public class Sentry.Client : Object
 					.begin_object ()
 						.set_member_name ("sp").add_string_value ("%p".printf (sp))
 						.set_member_name ("eh").add_string_value ("%p".printf (eh))
-					.end_object ()
+					.end_object ();
+
+#if LIBDWARF
+			if (dwarf_code == Dwarf.DLV_OK)
+			{
+				Dwarf.Fde dwarf_frame;
+				ulong lopc, hipc;
+				switch (Dwarf.get_fde_at_pc (dwarf_frames, (ulong) ip, out dwarf_frame, out lopc, out hipc, out dwarf_error))
+				{
+					case Dwarf.DLV_OK:
+						stderr.printf ("Adding dwarf frame..\n");
+						break;
+					case Dwarf.DLV_ERROR:
+						stderr.printf ("Could not add debuginfo for frame.\n");
+						break;
+				}
+			}
+#endif
+
+			stacktrace
 					.set_member_name ("function").add_string_value ((string) proc_name)
 					.set_member_name ("instruction_addr").add_string_value (("%p").printf (ip))
 					.set_member_name ("symbol_addr").add_string_value ("%p".printf (proc_info.start_ip))
