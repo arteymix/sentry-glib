@@ -115,5 +115,21 @@ public int main (string[] args)
 	});
 #endif
 
+	Test.add_func ("/http-context", () => {
+		var sentry_dsn = Environment.get_variable ("SENTRY_DSN");
+
+		var sentry = new Sentry.Client (sentry_dsn);
+
+		if (sentry_dsn == null || sentry_dsn == "")
+		{
+			Test.skip ("The 'SENTRY_DSN' environment variable is not set or empty.");
+			return;
+		}
+
+		assert (sentry
+			.with_context (new Sentry.HttpContext ("http://localhost/", "GET", "some posted data", "a=b"))
+			.capture_message ("foo") != null);
+	});
+
 	return Test.run ();
 }

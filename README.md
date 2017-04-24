@@ -45,6 +45,14 @@ Structured logs:
 Log.set_writer_func (client.capture_structured_log);
 ```
 
+Contextual data:
+
+```vala
+client
+    .with_context (new Sentry.HttpContext ("http://localhost/"))
+    .capture_message ("foo");
+```
+
 It's perfectly usable via C:
 
 ```c

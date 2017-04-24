@@ -298,49 +298,56 @@ public class Sentry.Client : Object
 		return modules.get_root ();
 	}
 
-	public string? capture_message (string message, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
+	private Queue<Context> context_stack = new Queue<Context> ();
+
+	public unowned Client with_context (Context context)
 	{
-		return capture (new Json.Builder ()
+		context_stack.push_tail (context);
+		return this;
+	}
+
+	private Json.Builder begin_message ()
+	{
+		var payload = new Json.Builder ()
 			.begin_object ()
 				.set_member_name ("event_id").add_string_value (generate_event_id ())
 				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
 				.set_member_name ("sdk").add_value (generate_sdk ())
 				.set_member_name ("platform").add_string_value ("c")
-				.set_member_name ("message").add_string_value (limit (message, 10000))
 				.set_member_name ("tags").add_value (generate_tags (tags))
 				.set_member_name ("modules").add_value (generate_modules ())
-				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
+				.set_member_name ("stacktrace").add_value (generate_stacktrace ());
+
+		while (!context_stack.is_empty ())
+		{
+			var context = context_stack.pop_tail ();
+			payload
+				.set_member_name (context.get_key ()).add_value (Json.gobject_serialize (context));
+		}
+
+		return payload;
+	}
+
+	public string? capture_message (string message, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
+	{
+		return capture (begin_message ()
+				.set_member_name ("message").add_string_value (limit (message, 1000))
 			.end_object ()
 			.get_root ());
 	}
 
 	public async string? capture_message_async (string message, [CCode (array_length = false, array_null_terminated = true)] string[]? tags = {})
 	{
-		return yield capture_async (new Json.Builder ()
-			.begin_object ()
-				.set_member_name ("event_id").add_string_value (generate_event_id ())
-				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
-				.set_member_name ("sdk").add_value (generate_sdk ())
-				.set_member_name ("platform").add_string_value ("c")
-				.set_member_name ("message").add_string_value (limit (message, 10000))
-				.set_member_name ("tags").add_value (generate_tags (tags))
-				.set_member_name ("modules").add_value (generate_modules ())
-				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
+		return yield capture_async (begin_message ()
+				.set_member_name ("message").add_string_value (limit (message, 1000))
 			.end_object ()
 			.get_root ());
 	}
 
 	public string? capture_error (Error err, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
 	{
-		return capture (new Json.Builder ()
-			.begin_object ()
-				.set_member_name ("event_id").add_string_value (generate_event_id ())
-				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
-				.set_member_name ("sdk").add_value (generate_sdk ())
+		return capture (begin_message ()
 				.set_member_name ("level").add_string_value ("error")
-				.set_member_name ("platform").add_string_value ("c")
-				.set_member_name ("tags").add_value (generate_tags (tags))
-				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("message").add_string_value (limit ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code), 10000))
 				.set_member_name ("exception")
 				.begin_object ()
@@ -355,15 +362,8 @@ public class Sentry.Client : Object
 
 	public async string? capture_error_async (Error err, [CCode (array_length = false, array_null_terminated = true)] string[] tags = {})
 	{
-		return yield capture_async (new Json.Builder ()
-			.begin_object ()
-				.set_member_name ("event_id").add_string_value (generate_event_id ())
-				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
-				.set_member_name ("sdk").add_value (generate_sdk ())
+		return yield capture_async (begin_message ()
 				.set_member_name ("level").add_string_value ("error")
-				.set_member_name ("platform").add_string_value ("c")
-				.set_member_name ("tags").add_value (generate_tags (tags))
-				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("message").add_string_value (limit ("%s (%s, %d)".printf (err.message, err.domain.to_string (), err.code), 10000))
 				.set_member_name ("exception")
 				.begin_object ()
@@ -416,17 +416,9 @@ public class Sentry.Client : Object
 	public void capture_log (string? log_domain, LogLevelFlags log_flags, string message)
 	{
 
-		var payload = new Json.Builder ()
-			.begin_object ()
-				.set_member_name ("event_id").add_string_value (generate_event_id ())
-				.set_member_name ("timestamp").add_string_value (generate_timestamp ())
-				.set_member_name ("sdk").add_value (generate_sdk ())
+		var payload = begin_message ()
 				.set_member_name ("level").add_string_value (level_from_log_level (log_flags))
-				.set_member_name ("platform").add_string_value ("c")
-				.set_member_name ("tags").add_value (generate_tags (tags))
-				.set_member_name ("modules").add_value (generate_modules ())
 				.set_member_name ("message").add_string_value (limit (message, 10000))
-				.set_member_name ("stacktrace").add_value (generate_stacktrace ())
 			.end_object ()
 			.get_root ();
 
