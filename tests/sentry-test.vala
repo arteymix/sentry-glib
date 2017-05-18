@@ -56,7 +56,8 @@ public int main (string[] args)
 
 		if (Test.subprocess ())
 		{
-			var sentry = new Sentry.Client (sentry_dsn, Sentry.ClientFlags.FORCE_SYNCHRONOUS);
+			var sentry = new Sentry.Client (sentry_dsn);
+			sentry.is_synchronous = true;
 			Log.set_handler (null, LogLevelFlags.LEVEL_MESSAGE, sentry.capture_log);
 			message ("bar");
 			return;
@@ -79,7 +80,8 @@ public int main (string[] args)
 
 		if (Test.subprocess ())
 		{
-			var sentry = new Sentry.Client (sentry_dsn, Sentry.ClientFlags.FORCE_SYNCHRONOUS);
+			var sentry = new Sentry.Client (sentry_dsn);
+			sentry.is_synchronous = true;
 			Log.set_handler (null, LogLevelFlags.LEVEL_ERROR | LogLevelFlags.FLAG_FATAL, sentry.capture_log);
 			error ("bar");
 		}
@@ -102,7 +104,8 @@ public int main (string[] args)
 
 		if (Test.subprocess ())
 		{
-			var sentry = new Sentry.Client (sentry_dsn, Sentry.ClientFlags.FORCE_SYNCHRONOUS);
+			var sentry = new Sentry.Client (sentry_dsn);
+			sentry.is_synchronous = true;
 			Log.set_writer_func (sentry.capture_structured_log);
 			message ("bar");
 			return;

@@ -1,14 +1,5 @@
 using GLib;
 
-public enum Sentry.ClientFlags
-{
-	NONE,
-	/**
-	 * Force all operation to be synchronous when possible.
-	 */
-	FORCE_SYNCHRONOUS
-}
-
 public class Sentry.Client : Object
 {
 	private extern const string VERSION;
@@ -16,7 +7,11 @@ public class Sentry.Client : Object
 
 	public string? dsn { get; construct; default = null; }
 
-	public ClientFlags client_flags { get; construct; }
+	/**
+	 * Ensure that each payload is received when capturing instead of simply
+	 * being queued on the default {@link GLib.MainContext}.
+	 */
+	public bool is_synchronous { get; construct set; default = false; }
 
 	public string?  server_name { get; construct set; default = null; }
 	public string?  release     { get; construct set; default = null; }
@@ -30,9 +25,9 @@ public class Sentry.Client : Object
 
 	private Soup.Session sentry_session;
 
-	public Client (string? dsn = null, ClientFlags client_flags = ClientFlags.NONE)
+	public Client (string? dsn = null)
 	{
-		base (dsn: dsn, client_flags: client_flags);
+		base (dsn: dsn);
 	}
 
 	construct
@@ -409,8 +404,8 @@ public class Sentry.Client : Object
 	 *
 	 * Note that this instance must be passed for the 'user_data' argument.
 	 *
-	 * The log is send asynchronously unless the error is marked with {@link GLib.LogLevelFlags.FLAG_FATAL}
-	 * or the {@link SentryClient.force_synchronous} property is 'true'.
+	 * The log is send ais_synchronously unless the error is marked with {@link GLib.LogLevelFlags.FLAG_FATAL}
+	 * or the {@link SentryClient.force_is_synchronous} property is 'true'.
 	 */
 	[CCode (instance_pos = -1)]
 	public void capture_log (string? log_domain, LogLevelFlags log_flags, string message)
@@ -422,7 +417,7 @@ public class Sentry.Client : Object
 			.end_object ()
 			.get_root ();
 
-		if (LogLevelFlags.FLAG_FATAL in log_flags || ClientFlags.FORCE_SYNCHRONOUS in client_flags)
+		if (LogLevelFlags.FLAG_FATAL in log_flags || is_synchronous)
 		{
 			capture (payload);
 		}
@@ -470,7 +465,7 @@ public class Sentry.Client : Object
 			.set_member_name ("stacktrace").add_value (generate_stacktrace ())
 			.end_object ();
 
-		if (LogLevelFlags.FLAG_FATAL in log_level || ClientFlags.FORCE_SYNCHRONOUS in client_flags)
+		if (LogLevelFlags.FLAG_FATAL in log_level || is_synchronous)
 		{
 			return capture (payload.get_root ()) == null ? LogWriterOutput.UNHANDLED : LogWriterOutput.HANDLED;
 		}
