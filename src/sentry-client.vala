@@ -53,6 +53,7 @@ public class Sentry.Client : Object
 		                                              secret_key));
 		var gen = new Json.Generator ();
 		gen.root = payload;
+		msg.set_priority (Soup.MessagePriority.VERY_HIGH);
 		msg.set_request ("application/json", Soup.MemoryUse.COPY, gen.to_data (null).data);
 		return msg;
 	}
