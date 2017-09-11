@@ -405,13 +405,12 @@ public class Sentry.Client : Object
 	 *
 	 * Note that this instance must be passed for the 'user_data' argument.
 	 *
-	 * The log is send ais_synchronously unless the error is marked with {@link GLib.LogLevelFlags.FLAG_FATAL}
-	 * or the {@link SentryClient.force_is_synchronous} property is 'true'.
+	 * The log is send asynchronously unless the error is marked with {@link GLib.LogLevelFlags.FLAG_FATAL}
+	 * or the {@link SentryClient.is_synchronous} property is 'true'.
 	 */
 	[CCode (instance_pos = -1)]
 	public void capture_log (string? log_domain, LogLevelFlags log_flags, string message)
 	{
-
 		var payload = begin_message ()
 				.set_member_name ("level").add_string_value (level_from_log_level (log_flags))
 				.set_member_name ("message").add_string_value (limit (message, 10000))
