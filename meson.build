@@ -1,9 +1,9 @@
-project('Sentry-GLib', 'c', 'vala',
+project('sentry-glib', 'c', 'vala',
         version: '0.1.0-dev')
 
 api_version = '0.1'
 
-add_project_arguments('--vapidir=' + meson.current_source_dir() + '/vapi',
+add_project_arguments(['--vapidir', join_paths(meson.current_source_dir(), 'vapi')],
                       language: 'vala')
 
 glib_dep = dependency('glib-2.0')
